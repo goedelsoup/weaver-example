@@ -1,0 +1,19 @@
+{
+    "$schema": "https://turbo.build/schema.json",
+    "extends": [
+        "//"
+    ],
+    "tasks": {
+        "build": {
+            "inputs": ["registry-importer.config.ts", "weaver.ts"],
+            "dependsOn": ["^build", "install:registry-importer"]
+        },
+        "install:registry-importer": {
+            "dependsOn": ["@internal/registry-importer#build"]
+        },
+        "weaver:generate": {
+            "cache": false,
+            "dependsOn": ["^build", "build", "@internal/semconv#clean"]
+        }
+    }
+}

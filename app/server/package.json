@@ -1,0 +1,37 @@
+{
+    "name": "@weaver-example/server",
+    "type": "module",
+    "description": "Server for the pet store app used in the Weaver example",
+    "scripts": {
+        "build": "tsup",
+        "clean": "rm -rf dist",
+        "dev": "tsx src/server.ts",
+        "prisma:generate": "prisma generate",
+        "test": "jest --passWithNoTests"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@internal/tsconfig": "workspace:^",
+        "@types/jest": "catalog:",
+        "jest": "catalog:",
+        "prisma": "^6.2.1",
+        "ts-node": "catalog:",
+        "tsup": "catalog:",
+        "tsx": "catalog:"
+    },
+    "dependencies": {
+        "@internal/semconv": "workspace:*",
+        "@opentelemetry/api": "catalog:opentelemetry",
+        "@opentelemetry/api-logs": "catalog:opentelemetry",
+        "@opentelemetry/exporter-logs-otlp-http": "catalog:opentelemetry",
+        "@opentelemetry/exporter-metrics-otlp-http": "catalog:opentelemetry",
+        "@opentelemetry/exporter-trace-otlp-http": "catalog:opentelemetry",
+        "@opentelemetry/instrumentation": "catalog:opentelemetry",
+        "@opentelemetry/instrumentation-http": "catalog:opentelemetry",
+        "@opentelemetry/sdk-logs": "catalog:opentelemetry",
+        "@opentelemetry/sdk-metrics": "catalog:opentelemetry",
+        "@opentelemetry/sdk-trace-node": "catalog:opentelemetry",
+        "@prisma/client": "6.2.1",
+        "hono": "catalog:"
+    }
+}

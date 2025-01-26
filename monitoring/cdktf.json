@@ -1,0 +1,12 @@
+{
+    "app": "tsx src/stack.tf",
+    "language": "typescript",
+    "projectId": "",
+    "terraformProviders": [
+        {
+            "name": "grafana",
+            "source": "grafana/grafana",
+            "version": "~> 3.17"
+        }
+    ]
+}

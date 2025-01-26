@@ -1,0 +1,7 @@
+{
+    "name": "@internal/tsconfig",
+    "devDependencies": {
+        "ts-node": "catalog:",
+        "typescript": "catalog:"
+    }
+}

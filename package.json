@@ -1,0 +1,13 @@
+{
+    "name": "weaver-example",
+    "private": true,
+    "devDependencies": {
+        "turbo": "catalog:"
+    },
+    "scripts": {
+        "build": "turbo build",
+        "clean": "turbo clean",
+        "test": "turbo test"
+    },
+    "packageManager": "pnpm@9.15.4"
+}

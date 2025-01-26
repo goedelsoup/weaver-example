@@ -1,0 +1,26 @@
+---
+receivers:
+  otlp:
+    protocols:
+      grpc:
+exporters:
+  debug:
+  otlp/loki:
+    endpoint: loki:4317
+    tls:
+      insecure: true
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+service:
+  pipelines:
+    logs:
+      receivers: [otlp]
+      exporters: [otlp/loki]
+    metrics:
+      receivers: [otlp]
+      exporters: [debug]
+    traces:
+      receivers: [otlp]
+      exporters: [otlp/tempo]

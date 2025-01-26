@@ -1,0 +1,13 @@
+---
+params:
+  exclude_root_namespace: []
+
+templates:
+  - pattern: attributes.ts.j2
+    filter: semconv_grouped_attributes($params)
+    application_mode: each
+    file_name: attributes/{{ ctx.root_namespace | snake_case }}.ts
+  - pattern: metrics.ts.j2
+    filter: semconv_grouped_metrics($params)
+    application_mode: each
+    file_name: metrics/{{ ctx.root_namespace | snake_case }}.ts

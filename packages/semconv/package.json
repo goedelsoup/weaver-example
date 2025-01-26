@@ -1,0 +1,18 @@
+{
+    "name": "@internal/semconv",
+    "private": true,
+    "scripts": {
+        "build": "tsc",
+        "clean": "rm -rf dist src/attributes/*.ts src/metrics/*.ts",
+        "test": "jest --passWithNoTests"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@internal/registry-importer": "workspace:^",
+        "@internal/tsconfig": "workspace:^",
+        "@types/jest": "catalog:",
+        "jest": "catalog:",
+        "ts-node": "catalog:",
+        "typescript": "catalog:"
+    }
+}

@@ -1,0 +1,19 @@
+{
+    "name": "@weaver-example/registry",
+    "private": true,
+    "scripts": {
+        "build": "registry-importer",
+        "clean": "rm -rf .imported **/.imported",
+        "install:registry-importer": "pnpm install @internal/registry-importer",
+        "weaver:generate": "tsx weaver.ts generate typescript"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@internal/registry-importer": "workspace:^",
+        "@internal/tsconfig": "workspace:^",
+        "@types/node": "catalog:",
+        "testcontainers": "^10.17.1",
+        "ts-node": "catalog:",
+        "tsx": "catalog:"
+    }
+}

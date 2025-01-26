@@ -1,0 +1,23 @@
+{
+    "$schema": "https://json.schemastore.org/tsconfig",
+    "include": ["src/**/*.ts"],
+    "exclude": ["node_modules"],
+    "ts-node": {
+        "transpileOnly": true,
+        "files": true,
+        "compilerOptions": {
+            "module": "Preserve",
+            "moduleResolution": "node"
+        }
+    },
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "outDir": "dist",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true
+    }
+}

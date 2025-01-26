@@ -1,0 +1,31 @@
+{
+    "name": "@internal/registry-importer",
+    "description": "Handles importing remote registries and merging them into a single registry",
+    "private": true,
+    "bin": "dist/import.mjs",
+    "exports": {
+        "./config": {
+            "default": "./src/config.ts"
+        }
+    },
+    "scripts": {
+        "build": "tsup",
+        "clean": "rm -rf dist",
+        "test": "jest --passWithNoTests"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@internal/tsconfig": "workspace:^",
+        "@types/jest": "catalog:",
+        "@types/node": "^22.10.10",
+        "jest": "catalog:",
+        "tar": "^7.4.3",
+        "ts-node": "catalog:",
+        "tsup": "catalog:",
+        "typescript": "catalog:"
+    },
+    "dependencies": {
+        "cosmiconfig": "^9.0.0",
+        "node-fetch": "^3.3.2"
+    }
+}

@@ -1,0 +1,33 @@
+---
+groups:
+  - id: registry.cart
+    prefix: cart
+    type: attribute_group
+    display_name: Cart Attributes
+    brief: >
+      These attributes are used to summarize the attributes of a shopping cart.
+    attributes:
+      - id: id
+        type: string
+        brief: >
+          The unique identifier of the cart.
+        stability: experimental
+        examples: ['194:shopping']
+      - id: type.name
+        type: string
+        brief: >
+          The type of cart, such as "shopping" or "wishlist".
+        stability: experimental
+        examples: ['shopping', 'wishlist']
+      - id: items.count
+        type: int
+        brief: >
+          The number of items in the cart.
+        stability: experimental
+        examples: [0, 17]
+      - id: cost.total
+        type: double
+        brief: >
+          The total cost of the items in the cart.
+        stability: experimental
+        examples: [7.13]

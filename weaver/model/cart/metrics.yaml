@@ -1,0 +1,14 @@
+---
+groups:
+  - id: metric.cart.cost.total
+    type: metric
+    metric_name: cart.cost.total
+    brief: A summary of user shopping carts and their value.
+    instrument: histogram
+    unit: USD
+    stability: experimental
+    attributes:
+      - ref: cart.id
+      - ref: cart.type.name
+      - ref: cart.items.count
+      - ref: cart.cost.total

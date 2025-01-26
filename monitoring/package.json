@@ -1,0 +1,17 @@
+{
+    "name": "@infra/monitoring",
+    "description": "CDKTF stack for managing Grafana",
+    "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@internal/semconv": "workspace:*",
+        "@internal/tsconfig": "workspace:*",
+        "cdktf": "^0.4.0",
+        "cdktf-cli": "^0.4.0",
+        "constructs": "^10.4.2",
+        "ts-node": "catalog:",
+        "typescript": "^4.3.5"
+    },
+    "dependencies": {
+        "@grafana/schema": "^11.4.0"
+    }
+}

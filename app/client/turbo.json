@@ -1,0 +1,14 @@
+{
+    "$schema": "https://turbo.build/schema.json",
+    "extends": [
+        "//"
+    ],
+    "tasks": {
+        "build": {
+            "dependsOn": [
+                "^build",
+                "@weaver-example/server#prisma:generate"
+            ]
+        }
+    }
+}

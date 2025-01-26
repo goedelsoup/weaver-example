@@ -1,0 +1,155 @@
+name: weaver-example-ts
+# Create a three-segment network for the app, data, and telemetry services
+networks:
+  app:
+  data:
+  telemetry:
+# Create internal volumes for telemetry storage
+volumes:
+  loki:
+  minio-loki:
+  prometheus:
+  tempo:
+# Define shared environment variables
+x-env-database: &envDatabase
+  POSTGRES_USER: petshop
+  POSTGRES_PASSWORD: petshop
+  POSTGRES_DB: petshop
+x-env-minio-loki: &envMinioLoki
+  MINIO_ROOT_USER: loki
+  MINIO_ROOT_PASSWORD: supersecret
+# Define common container configuration
+x-container-config-telemetry: &containerConfigTelemetry
+  networks: [telemetry]
+  restart: always
+
+services:
+  # A React single-page application
+  client:
+    build:
+      context: ./app/client
+    network_mode: "service:api"
+    depends_on: [api]
+  # A Node.js server which provides the API for the React app
+  api:
+    build:
+      context: ./app/server
+    ports: ["3001"]
+    networks: [app, data]
+    environment:
+      <<: *envDatabase
+    depends_on: [postgres]
+  # The primary storage for the application
+  postgres:
+    image: postgres:13
+    networks: [data]
+    environment:
+      <<: *envDatabase
+  
+  #
+  # The remaining services are for telemetry and monitoring
+  #
+  grafana:
+    <<: *containerConfigTelemetry
+    image: grafana/grafana:11.0.0
+    volumes:
+      - ./monitoring/etc/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
+    ports: ["3000"]
+    depends_on:
+      - tempo
+      - loki
+      - prometheus
+
+  init-tempo:
+    image: &tempoImage grafana/tempo:latest
+    user: root
+    entrypoint:
+      - "chown"
+      - "10001:10001"
+      - "/var/tempo"
+    volumes:
+      - tempo:/var/tempo
+
+  init-loki:
+    image: &lokiImage grafana/loki:latest
+    user: root
+    entrypoint:
+      - "chown"
+      - "10001:10001"
+      - "/var/loki"
+    volumes:
+      - loki:/var/loki
+
+  otel-collector:
+    <<: *containerConfigTelemetry
+    image: otel/opentelemetry-collector:0.86.0
+    volumes:
+      - ./monitoring/etc/otel-collector.yaml:/etc/otel-collector.yaml
+    command: [ "--config=/etc/otel-collector.yaml" ]
+    depends_on:
+      - loki
+      - prometheus
+      - tempo
+  
+  tempo:
+    <<: *containerConfigTelemetry
+    image: *tempoImage
+    ports: ["3200, "4317"]
+    volumes:
+      - ./monitoring/etc/tempo.yaml:/etc/tempo.yaml
+      - tempo:/var/tempo
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    depends_on:
+      - init-tempo
+  
+  loki:
+    <<: *containerConfigTelemetry
+    image: *lokiImage
+    ports: ["3100", "7946"]
+    environment:
+      <<: *envMinioLoki
+    volumes:
+      - ./monitoring/etc/loki.yaml:/etc/loki/loki.yaml
+      - ./rules:/loki/rules:ro
+    command: "-config.file=/etc/loki/loki.yaml -target=backend -legacy-read-mode=false"
+    depends_on:
+      - init-loki
+
+  minio:
+    <<: *containerConfigTelemetry
+    image: minio/minio
+    ports: ["9000"]
+    environment:
+      <<: *envMinioLoki
+      - MINIO_PROMETHEUS_AUTH_TYPE=public
+      - MINIO_UPDATE=off
+    volumes: [minio-loki:/data]
+    entrypoint:
+      - sh
+      - -euc
+      - |
+        mkdir -p /data/loki-data && \
+        mkdir -p /data/loki-ruler && \
+        minio server /data
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 15s
+      timeout: 20s
+      retries: 5
+
+  prometheus:
+    <<: *containerConfigTelemetry
+    image: prom/prometheus:latest
+    ports: ["9090"]
+    volumes:
+      - ./monitoring/etc/prometheus.yaml:/etc/prometheus.yaml
+    command:
+      - --config.file=/etc/prometheus.yaml
+      - --web.enable-remote-write-receiver
+      - --enable-feature=exemplar-storage
+      - --enable-feature=native-histograms

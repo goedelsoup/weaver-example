@@ -327,13 +327,14 @@ importers:
         version: 5.7.3
 
   weaver:
+    dependencies:
+      '@internal/registry-importer':
+        specifier: workspace:^
+        version: link:../packages/registry-importer
     devDependencies:
       '@biomejs/biome':
         specifier: 'catalog:'
         version: 1.9.4
-      '@internal/registry-importer':
-        specifier: workspace:^
-        version: link:../packages/registry-importer
       '@internal/tsconfig':
         specifier: workspace:^
         version: link:../packages/tsconfig

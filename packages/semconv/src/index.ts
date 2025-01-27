@@ -1,0 +1,1 @@
+export * as acme from './attributes/acme';

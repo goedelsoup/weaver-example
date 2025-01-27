@@ -2,7 +2,7 @@
     "name": "@internal/registry-importer",
     "description": "Handles importing remote registries and merging them into a single registry",
     "private": true,
-    "bin": "dist/import.mjs",
+    "bin": "dist/entrypoint.mjs",
     "exports": {
         "./config": {
             "default": "./src/config.ts"

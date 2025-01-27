@@ -6,7 +6,7 @@
     "tasks": {
         "build": {
             "inputs": ["registry-importer.config.ts", "weaver.ts"],
-            "dependsOn": ["^build", "install:registry-importer"]
+            "dependsOn": ["^build", "@internal/registry-importer#build", "install:registry-importer"]
         },
         "install:registry-importer": {
             "dependsOn": ["@internal/registry-importer#build"]

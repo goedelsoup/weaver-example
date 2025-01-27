@@ -9,11 +9,13 @@
     },
     "devDependencies": {
         "@biomejs/biome": "catalog:",
-        "@internal/registry-importer": "workspace:^",
         "@internal/tsconfig": "workspace:^",
         "@types/node": "catalog:",
         "testcontainers": "^10.17.1",
         "ts-node": "catalog:",
         "tsx": "catalog:"
+    },
+    "dependencies": {
+        "@internal/registry-importer": "workspace:^"
     }
 }

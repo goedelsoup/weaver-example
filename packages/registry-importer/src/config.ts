@@ -20,6 +20,7 @@ function isLocalConfig(x: any): x is LocalConfig {
 export type RemoteConfig = {
     repository: string;
     version?: string;
+    include?: string[];
 } & NamedConfig;
 
 // biome-ignore: lint/suspicious/noExplicitAny: required for type guard

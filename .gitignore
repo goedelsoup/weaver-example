@@ -15,6 +15,7 @@ node_modules
 
 # Imported registries
 weaver/.imported
+weaver/**/imported
 
 # Build directories
 .turbo

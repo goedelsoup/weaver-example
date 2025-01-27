@@ -1,13 +1,13 @@
 
-import fetch from 'node-fetch';
+import fetch, { type Response } from 'node-fetch';
 import fs from 'node:fs/promises';
+import path from 'node:path';
 import * as tar from 'tar';
 
 import type { Config, RemoteConfig } from './config';
+import { dir } from 'node:console';
 
-export type ImportResult = { failed?: RemoteConfig[]; succeeded?: RemoteConfig[] };
-
-console.debug = () => {}
+console.debug = () => {};
 console.trace = () => {};
 
 const GITHUB_DEFAULT_HEADERS = {
@@ -65,6 +65,31 @@ const registryFilter = (path: string) => {
     return isModel || isSchema;
 };
 
+const createDir = (path: string) => {
+    console.trace(`Creating directory ${path}`);
+    return fs.mkdir(path, { recursive: true });
+};
+
+const fetchArchive = (url: string) => {
+    console.debug(`Fetching registry from ${url}`);
+    return fetch(url);
+};
+
+function handleArchiveResponse(archiveOptions: tar.TarOptionsWithAliasesAsyncNoFile) {
+    return (response: Response) => {
+        if (!response.ok) {
+            throw new Error(`Failed to download registry from ${response.url}`, {
+                cause: response.statusText,
+            });
+        }
+        if (!response.body) {
+            throw new Error(`Failed to retrieve archive from ${response.url}`);
+        }
+        const tarx = tar.x(archiveOptions);
+        return response.body.pipe(tarx, {});
+    }
+};
+
 /**
  * Retrieves the registry archive and returns a stream of the extracted files which are tracked locally. This
  * mitigates the need for utilizing a submodule to track the registry.
@@ -77,92 +102,60 @@ const registryFilter = (path: string) => {
  * 
  * @returns a stream of the extracted files
  */
-async function downloadRegistry(remote: RemoteConfig, path: string, outdir: string): Promise<tar.Parser> {
-    const version = remote.version || await getLatestRelease(remote);
-    if (!version) {
-        throw new Error(`Failed to retrieve version for ${remote.repository}`);
-    }
-    const archiveUrl = repoUrl(remote, `${TAG_ARCHIVE_BASE}/${version}.tar.gz`);
+function downloadRegistry(remote: RemoteConfig, path: string, outdir: string): Promise<tar.Unpack> {
+    const version = Promise.resolve(remote.version) || getLatestRelease(remote);
+    // Create stage directory for the imported registry
     const targetDir = `${path}/${outdir}/${remote.name}`;
-    console.log(`Creating directory ${targetDir}`);
-    await fs.mkdir(targetDir, { recursive: true });
-    console.log(`Fetching registry from ${archiveUrl}`);
-    const response = await fetch(archiveUrl);
+    // Retrieve the archive
     const archiveOptions: tar.TarOptionsWithAliasesAsyncNoFile = {
         strip: 1,
         cwd: targetDir,
         filter: registryFilter,
     };
-    if (!response.ok) {
-        console.log(response.statusText);
-        throw new Error(`Failed to download registry from ${archiveUrl}`, {
-            cause: response.statusText,
-        });
-    }
-    if (!response.body) {
-        throw new Error(`Failed to retrieve archive from ${archiveUrl}`);
-    }
-    return Promise.resolve(response.body.pipe(tar.x(archiveOptions)))
-        .then((p) => {
-            console.log(`Imported registry ${remote.name} to ${targetDir}`);
-            return p;
-        });
+    return createDir(targetDir)
+        .then(_ => version.then(version => fetchArchive(repoUrl(remote, `${TAG_ARCHIVE_BASE}/${version}.tar.gz`))))
+        .then(handleArchiveResponse(archiveOptions))
+        .then(async u => await new Promise(resolve => u.on('finish', resolve)));
 }
 
-function cloneToLocal(remote: RemoteConfig, path: string, outdir: string): () => Promise<void> {
-    const fromBase = `${path}/${outdir}/${remote.name}`;
-    return async () => {
-        return await Promise.all(["model", "schemas"]
-                .map((dir) => {
-                    const source = `${fromBase}/${dir}/**/*`;
-                    const destination = `${path}/${dir}/${outdir}/`;
-                    console.log(`Copying ${source} to ${destination}`);
-                    return fs.copyFile(source, destination)
-                }))
-                .then();
+/**
+ * Replicates the remote registry to the local registry to allow Weaver to see them as one.
+ * @param remote the remote registry configuration
+ * @param path the path to the local registry
+ * @param outdir the output directory for the imported registry
+ */
+function cloneToLocal(_path: string, outdir: string): (record: [string, RemoteConfig]) => Promise<[string, RemoteConfig]> {
+    return (record: [string, RemoteConfig]) => {
+        const [_, remote] = record;
+        const SUPPORTED_DIRS = ["model", "schemas"];
+        const fromBase = path.resolve(`${_path}/${outdir}/${remote.name}`);
+        const clone = (dir: string) => {
+            const source = path.resolve(`${fromBase}/${dir}/`);
+            const destination = path.resolve(`${_path}/${dir}/${outdir.replace('.', '')}/${remote.name}/`);
+            console.log(`Copying ${source} to ${destination}`);
+            return fs.mkdir(destination, { recursive: true })
+                .then(_ => fs.cp(source, destination, { recursive: true }));
+        }
+        const dirs = remote.include ? remote.include.filter(v => SUPPORTED_DIRS.includes(v)) : SUPPORTED_DIRS;
+        return Promise.all(dirs.map(clone)).then(_ => record);
     };
 }
 
-export async function importRegistries(config: Config) {
+/**
+ * Imports all registries defined in the configuration.
+ * @param config the configuration for the registry importer
+ */
+export async function importRegistries(config: Config): Promise<[string, RemoteConfig][]> {
     const { registries } = config;
     const { local, remote } = registries;
+    console.log(`Importing registries: ${Object.keys(remote).join(', ')}`);
 
-    const loadRegistry = async (r: [string, RemoteConfig]) => {
+    const loadRegistry = (r: [string, RemoteConfig]) => {
         const [name, remote] = r;
         console.log(`Importing registry ${name} from ${remote.repository}`);
-        await downloadRegistry(remote, local.path, config.outDir);
-        return r;
+        return downloadRegistry(remote, local.path, config.outDir)
+            .then(_ => r);
     };
-
-    const cloneRegistry = async (r: [string, RemoteConfig]) => {
-        const [name, remote] = r;
-        console.log(`Importing registry ${name} to ${local.path}`);
-        await cloneToLocal(remote, local.path, config.outDir);
-        return r;
-    };
-
-    const identityP: Promise<ImportResult> = Promise.resolve({ failed: [], succeeded: [] });
     const remotes = Object.entries(remote);
-
-    const result = remotes.reduce(async (acc, r) => {
-        const [name, remote] = r;
-        return loadRegistry(r)
-            .then(cloneRegistry)
-            .then(r => acc.then(result => {
-                return {
-                    succeeded: result.succeeded ? [...result.succeeded, remote] : [remote],
-                    failed: result.failed,
-                }
-            }))
-            .catch(e => {
-                console.log(`Failed to import registry ${name}`);
-                return acc.then(a => {
-                    return {
-                        succeeded: a.succeeded,
-                        failed: a.failed ? [...a.failed, remote] : [remote],
-                    };
-                });
-            });
-    }, identityP);
-    return result;
+    return Promise.all(remotes.map(r => loadRegistry(r).then(cloneToLocal(local.path, config.outDir))));
 }

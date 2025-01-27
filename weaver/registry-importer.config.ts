@@ -9,6 +9,12 @@ const config: Config = {
             path: '.',
         },
         remote: {
+            acme: {
+                name: 'acme',
+                repository: 'goedelsoup/weaver-example-internal-registry',
+                version: 'v0.1.0',
+                include: ['model'],
+            },
             opentelemetry: {
                 name: 'opentelemetry',
                 repository: 'open-telemetry/semantic-conventions',
